@@ -1,28 +1,13 @@
 import time
 import cv2 as cv
 import mediapipe as mp
-import subprocess
+import actions as act
 
 BaseOptions = mp.tasks.BaseOptions
 GestureRecognizer = mp.tasks.vision.GestureRecognizer
 GestureRecognizerOptions = mp.tasks.vision.GestureRecognizerOptions
 GestureRecognizerResult = mp.tasks.vision.GestureRecognizerResult
 VisionRunningMode = mp.tasks.vision.RunningMode
-
-
-def mousemove(*, x, y, sync=False, execute=True):
-    command = ["xdotool", "mousemove"]
-
-    if sync:
-        command.append("--sync")
-
-    command.extend([str(x), str(y)])
-
-    if execute:
-        subprocess.call(command)
-
-    return command
-
 
 latest_result = None
 
@@ -50,8 +35,9 @@ HAND_CONNECTIONS = [
     (0, 17)
 ]
 
-
-def print_result(result: GestureRecognizerResult, output_image: mp.Image, timestamp_ms: int):
+# results callback
+#result: GestureRecognizerResult
+def print_result(result, output_image: mp.Image, timestamp_ms: int):
     global latest_result
     latest_result = result
 
@@ -81,7 +67,7 @@ def draw_hand_landmarks(frame, result):
 
                 color = (0, 255, 0)
                 if i == CURSOR_LANDMARK_INDEX:
-                    color = (0, 0, 255)  # highlight fingertip used for cursor
+                    color = (0, 0, 255)  # highlight landmark used for cursor
 
                 cv.circle(frame, (x, y), 5, color, -1)
 
@@ -108,6 +94,7 @@ def draw_hand_landmarks(frame, result):
 
 
 def move_mouse_from_landmark(result):
+    # Thing if you want the movement to be absolute (screen coordinates) or relative (movement deltas)
     global last_mouse_update_time, last_mouse_position
 
     if result is None or not result.hand_landmarks:
@@ -135,10 +122,45 @@ def move_mouse_from_landmark(result):
     if target_position == last_mouse_position:
         return
 
-    mousemove(x=screen_x, y=screen_y, sync=False)
+    act.mousemove(x=screen_x, y=screen_y)
     last_mouse_position = target_position
     last_mouse_update_time = now
 
+def perform_click_from_gesture(result):
+    if result is None or not result.gestures:
+        return
+
+    for hand_gestures in result.gestures:
+        if hand_gestures:
+            top_gesture = hand_gestures[0]
+            if top_gesture.category_name == "Closed_Fist":
+                act.mouseclick(button=1)
+                break
+
+def perform_grab_release_from_gesture(result):
+    if result is None or not result.gestures:
+        return
+
+    for hand_gestures in result.gestures:
+        if hand_gestures:
+            top_gesture = hand_gestures[0]
+            if top_gesture.category_name == "Closed_Fist":
+                act.mousegrab()
+                break
+            elif top_gesture.category_name == "Open_Palm":
+                act.mouserelease()
+                break
+
+def perform_escape_from_gesture(result):
+    if result is None or not result.gestures:
+        return
+
+    for hand_gestures in result.gestures:
+        if hand_gestures:
+            top_gesture = hand_gestures[0]
+            if top_gesture.category_name == "Thumb_Up":
+                act.press_Esc()
+                break
 
 def detect_gestures():
     cam = cv.VideoCapture(0)
@@ -165,6 +187,9 @@ def detect_gestures():
             output_frame = frame.copy()
             draw_hand_landmarks(output_frame, latest_result)
             move_mouse_from_landmark(latest_result)
+            ##perform_click_from_gesture(latest_result)
+            perform_grab_release_from_gesture(latest_result)
+            perform_escape_from_gesture(latest_result)
 
             cv.imshow("Gesture Detect", output_frame)
 
