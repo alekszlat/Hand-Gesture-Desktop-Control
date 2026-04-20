@@ -187,7 +187,6 @@ def detect_gestures():
             output_frame = frame.copy()
             draw_hand_landmarks(output_frame, latest_result)
             move_mouse_from_landmark(latest_result)
-            ##perform_click_from_gesture(latest_result)
             perform_grab_release_from_gesture(latest_result)
             perform_escape_from_gesture(latest_result)
 
