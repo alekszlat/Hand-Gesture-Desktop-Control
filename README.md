@@ -132,8 +132,5 @@ This structure may evolve as development progresses.
 ```text
 .
 ├── README.md
-├── docs/
 ├── src/
-├── tests/
-├── assets/
-└── scripts/
+└──  tests/
