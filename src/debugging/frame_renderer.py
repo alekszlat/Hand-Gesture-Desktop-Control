@@ -57,3 +57,17 @@ class FrameRenderer:
             2
         )
         return frame
+    
+    def draw_mode(self, frame, mode):
+        label = f"Mode: {mode}"
+
+        cv.putText(
+            frame,
+            label,
+            (10, 60),
+            cv.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (255, 255, 0),
+            2
+        )
+        return frame

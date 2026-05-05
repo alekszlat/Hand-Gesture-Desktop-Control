@@ -15,7 +15,7 @@ class HandTracker:
             model_path: str, 
             num_hands: int = 1, 
             min_detection_confidence: float = 0.35, 
-            min_presence_confidence: float = 0.35,
+            min_presence_confidence: float = 0.70,
             min_tracking_confidence: float = 0.35,):
         self.latest_result = None
 
