@@ -1,19 +1,12 @@
+"""Tracks gesture transitions and hold durations over time."""
+
 import time
 
 from gestures.gesture_state import GestureState
 
 
 class GestureStateTracker:
-    """
-    Tracks the current gesture over time.
-
-    It detects:
-    - current gesture name
-    - previous gesture name
-    - confidence
-    - how long the current gesture has been held
-    - whether the gesture changed on this update
-    """
+    """Builds GestureState objects from raw gesture recognizer output."""
 
     def __init__(self):
         self.current_name: str | None = None

@@ -1,10 +1,11 @@
+"""Immutable snapshot of the currently interpreted gesture."""
+
 from dataclasses import dataclass
+
 
 @dataclass(frozen=True)
 class GestureState:
-    """
-    Represents the current interpreted gesture state.
-    """
+    """Current gesture name, timing, confidence, and transition metadata."""
 
     name: str | None
     previous_name: str | None

@@ -1,19 +1,12 @@
+"""Gesture-to-action dispatch rules."""
+
 import time
 
 from gestures.mode_manager import AppMode
 
 
 class ActionDispatcher:
-    """
-    Decides which actions should happen based on:
-    - current app mode
-    - gesture state
-    - dynamic gesture
-    - cursor position
-
-    This class decides WHEN to do something.
-    Controllers decide HOW to do it.
-    """
+    """Chooses when controllers should run actions for the current mode."""
 
     def __init__(
         self,
@@ -60,7 +53,6 @@ class ActionDispatcher:
             self.mouse_controller.movemouse(cursor_pos[0], cursor_pos[1])
 
     def _handle_mouse_actions(self, mode: AppMode, gesture_state) -> None:
-        # Start grab/drag
         if (
             mode == AppMode.DRAG
             and gesture_state.name == "Closed_Fist"
@@ -69,13 +61,14 @@ class ActionDispatcher:
             self.mouse_controller.mousegrab()
             return
 
-        # Release grab/drag
-        if (self.mouse_controller.is_grabbing and gesture_state.name != "Closed_Fist"
-            and gesture_state.changed_to("Open_Palm")):
+        if (
+            self.mouse_controller.is_grabbing
+            and gesture_state.name != "Closed_Fist"
+            and gesture_state.changed_to("Open_Palm")
+        ):
             self.mouse_controller.mouserelease()
             return
 
-        # Click
         if (
             mode == AppMode.BASE
             and gesture_state.changed_to("Pointing_Up")
@@ -88,23 +81,20 @@ class ActionDispatcher:
         if mode != AppMode.LAUNCHER:
             return
 
-        if (
-            gesture_state.changed_to("ILoveYou")
-            and self._can_fire("open_browser", self.launcher_action_cooldown)
+        if gesture_state.changed_to("ILoveYou") and self._can_fire(
+            "open_browser", self.launcher_action_cooldown
         ):
             self.app_controller.open_browser()
             return
 
-        if (
-            gesture_state.changed_to("Pointing_Up")
-            and self._can_fire("open_discord", self.launcher_action_cooldown)
+        if gesture_state.changed_to("Pointing_Up") and self._can_fire(
+            "open_discord", self.launcher_action_cooldown
         ):
             self.app_controller.open_discord()
             return
 
-        if (
-            gesture_state.changed_to("Victory")
-            and self._can_fire("open_vscode", self.launcher_action_cooldown)
+        if gesture_state.changed_to("Victory") and self._can_fire(
+            "open_vscode", self.launcher_action_cooldown
         ):
             self.app_controller.open_vscode()
             return
@@ -114,7 +104,6 @@ class ActionDispatcher:
         mode: AppMode,
         gesture_state,
     ) -> None:
-        # Close active window only after confirmation mode
         if (
             mode == AppMode.CONFIRM_CLOSE
             and gesture_state.changed_to("Pointing_Up")
@@ -122,8 +111,7 @@ class ActionDispatcher:
         ):
             self.window_controller.close_active_window()
             return
-        
-        # Close the application itself if in confirm close mode
+
         if (
             mode == AppMode.CONFIRM_CLOSE
             and gesture_state.changed_to("Closed_Fist")
@@ -141,4 +129,3 @@ class ActionDispatcher:
 
         self.last_action_time[action_name] = now
         return True
-        

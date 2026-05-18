@@ -1,6 +1,11 @@
+"""Thin OpenCV wrapper for webcam frame capture."""
+
 import cv2 as cv
 
+
 class CameraStream:
+    """Owns a single OpenCV VideoCapture device."""
+
     def __init__(self, camera_index=0):
         self.cap = cv.VideoCapture(camera_index)
         if not self.cap.isOpened():

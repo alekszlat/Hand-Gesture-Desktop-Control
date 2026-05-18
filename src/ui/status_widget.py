@@ -1,3 +1,5 @@
+"""Always-on-top widget showing the active mode and available commands."""
+
 import tkinter as tk
 from tkinter import ttk
 
@@ -31,6 +33,8 @@ MODE_COMMANDS = {
 
 
 class StatusWidget:
+    """Small Tkinter window updated from the main app loop."""
+
     def __init__(self):
         self.closed = False
         self.root = tk.Tk()
@@ -83,7 +87,9 @@ class StatusWidget:
             row=1, column=0, sticky="w"
         )
 
-        ttk.Label(header, text="Gesture").grid(row=0, column=1, sticky="w", padx=(24, 0))
+        ttk.Label(header, text="Gesture").grid(
+            row=0, column=1, sticky="w", padx=(24, 0)
+        )
         ttk.Label(header, textvariable=self.gesture_value, font=("", 14, "bold")).grid(
             row=1, column=1, sticky="w", padx=(24, 0)
         )
@@ -94,13 +100,17 @@ class StatusWidget:
         commands.grid(row=2, column=0, sticky="ew")
 
         ttk.Label(commands, text="Gesture").grid(row=0, column=0, sticky="w")
-        ttk.Label(commands, text="Command").grid(row=0, column=1, sticky="w", padx=(18, 0))
+        ttk.Label(commands, text="Command").grid(
+            row=0, column=1, sticky="w", padx=(18, 0)
+        )
 
         for row_index in range(1, 7):
             gesture_label = ttk.Label(commands)
             command_label = ttk.Label(commands)
             gesture_label.grid(row=row_index, column=0, sticky="w", pady=2)
-            command_label.grid(row=row_index, column=1, sticky="w", padx=(18, 0), pady=2)
+            command_label.grid(
+                row=row_index, column=1, sticky="w", padx=(18, 0), pady=2
+            )
             self.command_rows.append((gesture_label, command_label))
 
         self._set_commands(MODE_COMMANDS[AppMode.BASE])

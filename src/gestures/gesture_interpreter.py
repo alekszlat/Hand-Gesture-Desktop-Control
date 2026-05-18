@@ -1,4 +1,9 @@
+"""Converts MediaPipe recognizer results into simple gesture names."""
+
+
 class GestureInterpreter:
+    """Filters low-confidence MediaPipe gesture classifications."""
+
     def __init__(self, min_confidence: float = 0.5):
         self.gesture = "None"
         self.confidence = 0.0
@@ -35,4 +40,3 @@ class GestureInterpreter:
         self.gesture = None
         self.confidence = 0.0
         return self.gesture, self.confidence
-        

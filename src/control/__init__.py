@@ -1,3 +1,5 @@
+"""Desktop action controllers."""
+
 from .mouse_controller import MouseController
 from .window_controller import WindowController
 from .action_dispatcher import ActionDispatcher

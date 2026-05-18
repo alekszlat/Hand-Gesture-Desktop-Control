@@ -1,11 +1,16 @@
-from enum import Enum
+"""Gesture-driven interaction mode state machine."""
 
-from gestures.gesture_state import GestureState
+from enum import Enum
 
 import numpy as np
 import sounddevice as sd
 
+from gestures.gesture_state import GestureState
+
+
 class AppMode(Enum):
+    """High-level interaction modes used by the dispatcher and UI."""
+
     BASE = "BASE"
     DRAG = "DRAG"
     LAUNCHER = "LAUNCHER"
@@ -13,15 +18,7 @@ class AppMode(Enum):
 
 
 class ModeManager:
-    """
-    Tracks the current interaction mode of the app.
-
-    It decides when the app should switch between modes such as:
-    - BASE
-    - DRAG
-    - LAUNCHER
-    - CONFIRM_CLOSE
-    """
+    """Updates the current interaction mode from gesture state."""
 
     def __init__(
         self,
@@ -44,19 +41,15 @@ class ModeManager:
         if gesture_state is None:
             return self.current_mode
 
-        # BASE mode transitions
         if self.current_mode == AppMode.BASE:
             self._update_from_base(gesture_state)
 
-        # DRAG mode transitions
         elif self.current_mode == AppMode.DRAG:
             self._update_from_drag(gesture_state)
 
-        # LAUNCHER mode transitions
         elif self.current_mode == AppMode.LAUNCHER:
             self._update_from_launcher(gesture_state)
 
-        # CONFIRM_CLOSE mode transitions
         elif self.current_mode == AppMode.CONFIRM_CLOSE:
             self._update_from_confirm_close(gesture_state)
         return self.current_mode
@@ -65,20 +58,17 @@ class ModeManager:
         self,
         gesture_state: GestureState,
     ) -> None:
-        
-        # Closed fist starts drag mode
         if gesture_state.changed_to("Closed_Fist"):
             self.current_mode = AppMode.DRAG
             return
 
-        # Thumb up held enters launcher mode
         if gesture_state.is_gesture("Thumb_Up") and gesture_state.held_for(
             self.launcher_hold_seconds
         ):
             self._play_mode_change_sound()
             self.current_mode = AppMode.LAUNCHER
             return
-        
+
         if gesture_state.is_gesture("ILoveYou") and gesture_state.held_for(
             self.confirm_close_hold_seconds
         ):
@@ -90,9 +80,7 @@ class ModeManager:
         self,
         gesture_state: GestureState,
     ) -> None:
-        
-        # Open palm exits drag mode
-        if gesture_state.changed_to("Open_Palm") or gesture_state.changed_to("Unknown"):  # If tracking is lost, exit drag mode for safety
+        if gesture_state.changed_to("Open_Palm") or gesture_state.changed_to("Unknown"):
             self.current_mode = AppMode.BASE
             return
 
@@ -100,7 +88,6 @@ class ModeManager:
         self,
         gesture_state: GestureState,
     ) -> None:
-        # Closed fist cancels launcher
         if gesture_state.changed_to("Closed_Fist"):
             self._play_mode_change_sound()
             self.current_mode = AppMode.BASE
@@ -110,7 +97,6 @@ class ModeManager:
         self,
         gesture_state: GestureState,
     ) -> None:
-        # Thumb_Up cancels close confirmation
         if gesture_state.changed_to("Thumb_Up"):
             self._play_mode_change_sound()
             self.current_mode = AppMode.BASE
@@ -119,15 +105,14 @@ class ModeManager:
     def reset(self) -> AppMode:
         self.current_mode = AppMode.BASE
         return self.current_mode
-    
-    # For debugging purposes, sound an alert when you change modes
+
     def _play_mode_change_sound(self):
-        # Generate a 440 Hz sine wave for 0.1 seconds
-        fs = 44100  # Sample rate
-        duration = 0.1  # Duration in seconds
-        frequency = 440  # Frequency in Hz (A4 note)
+        """Play a short feedback tone when the mode changes."""
+
+        fs = 44100
+        duration = 0.1
+        frequency = 440
         t = np.linspace(0, duration, int(fs * duration), endpoint=False)
         audio_data = 0.5 * np.sin(2 * np.pi * frequency * t)
 
-        # Play the sound
         sd.play(audio_data, fs)

@@ -1,3 +1,5 @@
+"""Startup settings window for editing AppConfig values."""
+
 import tkinter as tk
 from tkinter import messagebox, ttk
 
@@ -5,6 +7,8 @@ from config import AppConfig
 
 
 class SettingsWindow:
+    """Tkinter form that returns a validated AppConfig when started."""
+
     def __init__(self, config: AppConfig):
         self.config = config
         self.result: AppConfig | None = None
@@ -29,7 +33,9 @@ class SettingsWindow:
             value=str(config.cursor.landmark_smoothing)
         )
         self.deadzone_pixels = tk.StringVar(value=str(config.cursor.deadzone_pixels))
-        self.loss_hold_seconds = tk.StringVar(value=str(config.cursor.loss_hold_seconds))
+        self.loss_hold_seconds = tk.StringVar(
+            value=str(config.cursor.loss_hold_seconds)
+        )
         self.mirror_x = tk.BooleanVar(value=config.cursor.mirror_x)
 
         self.gesture_min_confidence = tk.StringVar(

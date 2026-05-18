@@ -1,3 +1,5 @@
+"""Tkinter user interface components."""
+
 from .settings_window import open_settings_window
 from .status_widget import StatusWidget
 

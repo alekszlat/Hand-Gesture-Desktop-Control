@@ -1,3 +1,5 @@
-__all__ = ["hand_tracker"]
+"""Hand tracking package."""
+
 from .hand_tracker import HandTracker
+
 __all__ = ["HandTracker"]

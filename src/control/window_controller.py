@@ -1,18 +1,16 @@
+"""Window control backed by xdotool."""
+
 import subprocess
 import sys
 
-class WindowController:
-    """
-    Controls desktop windows.
 
-    This first version is X11-focused and uses xdotool.
-    """
+class WindowController:
+    """Controls desktop windows on X11-focused Linux desktops."""
 
     def close_active_window(self) -> None:
         self._run(["xdotool", "getactivewindow", "windowclose"])
 
     def close_app(self) -> None:
-        #Press Esc to close the app. This is a bit of a hack, but it works for now.
         sys.exit()
 
     def minimize_active_window(self) -> None:
@@ -54,20 +52,11 @@ class WindowController:
         )
 
     def move_window_to_next_monitor(self) -> None:
-        """
-        Placeholder version.
-
-        For now this moves the active window to a fixed position
-        that you can adjust for your monitor layout.
-        """
+        """Move the active window to a fixed secondary-monitor position."""
         self.move_active_window(1920, 100)
 
     def move_window_to_previous_monitor(self) -> None:
-        """
-        Placeholder version.
-
-        For now this moves the active window back to the primary screen.
-        """
+        """Move the active window to a fixed primary-monitor position."""
         self.move_active_window(100, 100)
 
     def _run(self, command: list[str]) -> None:

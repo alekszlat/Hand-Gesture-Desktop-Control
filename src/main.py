@@ -1,11 +1,13 @@
+"""Command-line entry point for MBH."""
+
 from app import App
 from config import AppConfig
 from ui import open_settings_window
 
-# To do:
-# - Better mouse movement smoothing
 
 def main():
+    """Collect startup settings, then run the gesture control app."""
+
     config = open_settings_window(AppConfig())
     if config is None:
         return

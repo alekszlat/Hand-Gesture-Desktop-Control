@@ -1,20 +1,39 @@
+"""OpenCV drawing helpers for the debug camera window."""
+
 import cv2 as cv
 
 HAND_CONNECTIONS = [
-    (0, 1), (1, 2), (2, 3), (3, 4),
-    (0, 5), (5, 6), (6, 7), (7, 8),
-    (5, 9), (9, 10), (10, 11), (11, 12),
-    (9, 13), (13, 14), (14, 15), (15, 16),
-    (13, 17), (17, 18), (18, 19), (19, 20),
-    (0, 17)
+    (0, 1),
+    (1, 2),
+    (2, 3),
+    (3, 4),
+    (0, 5),
+    (5, 6),
+    (6, 7),
+    (7, 8),
+    (5, 9),
+    (9, 10),
+    (10, 11),
+    (11, 12),
+    (9, 13),
+    (13, 14),
+    (14, 15),
+    (15, 16),
+    (13, 17),
+    (17, 18),
+    (18, 19),
+    (19, 20),
+    (0, 17),
 ]
 
+
 class FrameRenderer:
+    """Draws tracking and gesture state onto camera frames."""
+
     def __init__(self, cursor_landmark_index=8):
-        self.cursor_landmark_index = cursor_landmark_index  # Example: using the tip of the index finger as the cursor landmark
+        self.cursor_landmark_index = cursor_landmark_index
 
     def draw_hand_landmarks(self, frame, result):
-        
         if result is None:
             return frame
 
@@ -31,19 +50,21 @@ class FrameRenderer:
 
                     color = (0, 255, 0)
                     if i == self.cursor_landmark_index:
-                        color = (0, 0, 255)  # highlight landmark used for cursor
+                        color = (0, 0, 255)
 
                     cv.circle(frame, (x, y), 5, color, -1)
 
                 for start_idx, end_idx in HAND_CONNECTIONS:
                     if start_idx < len(points) and end_idx < len(points):
-                        cv.line(frame, points[start_idx], points[end_idx], (255, 0, 0), 2)
+                        cv.line(
+                            frame, points[start_idx], points[end_idx], (255, 0, 0), 2
+                        )
 
         return frame
-    
+
     def draw_gesture_label(self, frame, gesture):
         label = "Gesture: None"
-        
+
         if gesture and gesture != "Unknown":
             label = f"Gesture: {gesture}"
 
@@ -54,10 +75,10 @@ class FrameRenderer:
             cv.FONT_HERSHEY_SIMPLEX,
             0.8,
             (255, 255, 0),
-            2
+            2,
         )
         return frame
-    
+
     def draw_mode(self, frame, mode):
         label = f"Mode: {mode}"
 
@@ -68,6 +89,6 @@ class FrameRenderer:
             cv.FONT_HERSHEY_SIMPLEX,
             0.8,
             (255, 255, 0),
-            2
+            2,
         )
         return frame

@@ -1,3 +1,5 @@
+"""Application orchestration for camera input, gestures, actions, and UI."""
+
 import cv2 as cv
 
 from camera import CameraStream
@@ -22,12 +24,13 @@ from ui import StatusWidget
 
 
 class App:
+    """Owns the main realtime loop and connects the app subsystems."""
+
     def __init__(self, config: AppConfig | None = None):
         self.config = config or AppConfig()
         self.window_name = self.config.window_name
         self.running = False
 
-        # Core input/tracking
         self.cam = CameraStream(camera_index=self.config.camera.camera_index)
         self.hand_tracker = HandTracker(
             model_path=self.config.tracking.model_path,
@@ -37,14 +40,12 @@ class App:
             min_tracking_confidence=self.config.tracking.min_tracking_confidence,
         )
 
-        # Gesture interpretation/state
         self.gesture_interpreter = GestureInterpreter(
             min_confidence=self.config.gesture.min_confidence
         )
         self.gesture_state_tracker = GestureStateTracker()
         self.mode_manager = ModeManager()
 
-        # Cursor and dynamic gestures
         self.cursor_mapper = CursorMapper(
             screen_width=self.config.cursor.screen_width,
             screen_height=self.config.cursor.screen_height,
@@ -56,12 +57,10 @@ class App:
             loss_hold_seconds=self.config.cursor.loss_hold_seconds,
         )
 
-        # Controllers
         self.mouse_controller = MouseController()
         self.app_controller = AppController()
         self.window_controller = WindowController()
 
-        # Dispatcher receives controller instances
         self.action_dispatcher = ActionDispatcher(
             mouse_controller=self.mouse_controller,
             app_controller=self.app_controller,
@@ -71,11 +70,12 @@ class App:
             window_action_cooldown=self.config.actions.window_action_cooldown,
         )
 
-        # Debug renderer
         self.frame_renderer = FrameRenderer(
             cursor_landmark_index=self.config.cursor.cursor_landmark_index
         )
-        self.status_widget = StatusWidget() if self.config.ui.show_status_widget else None
+        self.status_widget = (
+            StatusWidget() if self.config.ui.show_status_widget else None
+        )
 
     def run(self):
         self.running = True
@@ -89,34 +89,29 @@ class App:
 
         except Exception:
             import traceback
+
             traceback.print_exc()
 
         finally:
             self.shutdown()
 
     def update(self):
-        # 1. Read camera frame
         frame = self.cam.read_frame()
 
-        # 2. Send frame to MediaPipe tracker
         processed_frame = self.hand_tracker.process_frame(frame)
         latest_result = self.hand_tracker.get_latest_result()
 
-        # 3. Interpret static gesture
         gesture_name, confidence = self.gesture_interpreter.interpret_gesture(
             latest_result
         )
 
-        # 4. Track gesture state over time
         gesture_state = self.gesture_state_tracker.update(
             gesture_name,
             confidence,
         )
 
-        # 5. Map hand landmark to cursor position
         mouse_pos = self.cursor_mapper.map_to_screen(latest_result)
 
-        # 7. Update current app mode
         current_mode = self.mode_manager.update(gesture_state)
 
         if self.status_widget is not None:
@@ -125,14 +120,12 @@ class App:
                 gesture_name=gesture_state.name,
             )
 
-        # 8. Dispatch actions
         self.action_dispatcher.dispatch(
             mode=current_mode,
             gesture_state=gesture_state,
             cursor_pos=mouse_pos,
         )
 
-        # 9. Render debug output
         output_frame = self.render(
             frame=processed_frame,
             latest_result=latest_result,

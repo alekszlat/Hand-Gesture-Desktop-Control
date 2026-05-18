@@ -1,7 +1,11 @@
+"""Maps hand landmarks from normalized camera space to screen coordinates."""
+
 import time
 
 
 class CursorMapper:
+    """Rate-limits and smooths cursor positions derived from hand landmarks."""
+
     def __init__(
         self,
         screen_width,
@@ -19,20 +23,14 @@ class CursorMapper:
         self.mouse_update_interval = mouse_update_interval
         self.mirror_x = mirror_x
 
-        # Smaller = smoother, but slower response
         self.landmark_smoothing = landmark_smoothing
-
-        # Ignore very tiny cursor motion
         self.deadzone_pixels = deadzone_pixels
-
-        # Keep last valid cursor briefly if tracking disappears
         self.loss_hold_seconds = loss_hold_seconds
 
         self.last_mouse_update_time = 0.0
         self.last_mouse_position = None
         self.last_valid_tracking_time = 0.0
 
-        # Smoothed normalized landmark coordinates
         self.smoothed_landmark_x = None
         self.smoothed_landmark_y = None
 
@@ -52,18 +50,20 @@ class CursorMapper:
 
         landmark = hand_landmarks[self.cursor_landmark_index]
 
-        # Clamp normalized coordinates first
         raw_x = max(0.0, min(landmark.x, 1.0))
         raw_y = max(0.0, min(landmark.y, 1.0))
 
-        # Smooth landmark coordinates before mapping to screen
         if self.smoothed_landmark_x is None or self.smoothed_landmark_y is None:
             self.smoothed_landmark_x = raw_x
             self.smoothed_landmark_y = raw_y
         else:
             alpha = self.landmark_smoothing
-            self.smoothed_landmark_x = alpha * raw_x + (1.0 - alpha) * self.smoothed_landmark_x
-            self.smoothed_landmark_y = alpha * raw_y + (1.0 - alpha) * self.smoothed_landmark_y
+            self.smoothed_landmark_x = (
+                alpha * raw_x + (1.0 - alpha) * self.smoothed_landmark_x
+            )
+            self.smoothed_landmark_y = (
+                alpha * raw_y + (1.0 - alpha) * self.smoothed_landmark_y
+            )
 
         norm_x = self.smoothed_landmark_x
         norm_y = self.smoothed_landmark_y

@@ -1,3 +1,5 @@
+"""Gesture interpretation and mode state package."""
+
 from .cursor_mapper import CursorMapper
 from .gesture_interpreter import GestureInterpreter
 from .gesture_state import GestureState

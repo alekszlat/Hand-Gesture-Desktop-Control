@@ -1,10 +1,10 @@
+"""Application launching controller."""
+
 import subprocess
 
 
 class AppController:
-    """
-    Opens desktop applications.
-    """
+    """Opens configured desktop applications."""
 
     def __init__(
         self,

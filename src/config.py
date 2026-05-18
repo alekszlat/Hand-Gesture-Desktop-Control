@@ -1,8 +1,12 @@
+"""Typed runtime settings shared by the app, UI, and controllers."""
+
 from dataclasses import dataclass, field
 from pathlib import Path
 
 
-DEFAULT_MODEL_PATH = Path(__file__).resolve().parent / "models" / "gesture_recognizer.task"
+DEFAULT_MODEL_PATH = (
+    Path(__file__).resolve().parent / "models" / "gesture_recognizer.task"
+)
 
 
 @dataclass
@@ -50,6 +54,8 @@ class UiConfig:
 
 @dataclass
 class AppConfig:
+    """Top-level settings object passed into App at startup."""
+
     window_name: str = "Gesture Detect"
     camera: CameraConfig = field(default_factory=CameraConfig)
     tracking: TrackingConfig = field(default_factory=TrackingConfig)
