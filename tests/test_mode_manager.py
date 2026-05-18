@@ -1,5 +1,7 @@
 """Tests for mode transitions without playing audio."""
 
+import builtins
+
 from gestures.gesture_state import GestureState
 from gestures.mode_manager import AppMode, ModeManager
 
@@ -48,3 +50,17 @@ def test_confirm_close_mode_can_be_cancelled(monkeypatch):
     mode = manager.update(state("Thumb_Up", previous_name="ILoveYou"))
 
     assert mode == AppMode.BASE
+
+
+def test_mode_change_sound_is_optional_when_portaudio_is_missing(monkeypatch):
+    manager = ModeManager()
+    real_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "sounddevice":
+            raise OSError("PortAudio library not found")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    manager._play_mode_change_sound()

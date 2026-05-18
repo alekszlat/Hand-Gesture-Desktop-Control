@@ -3,7 +3,6 @@
 from enum import Enum
 
 import numpy as np
-import sounddevice as sd
 
 from gestures.gesture_state import GestureState
 
@@ -108,6 +107,11 @@ class ModeManager:
 
     def _play_mode_change_sound(self):
         """Play a short feedback tone when the mode changes."""
+
+        try:
+            import sounddevice as sd
+        except OSError:
+            return
 
         fs = 44100
         duration = 0.1
