@@ -15,8 +15,8 @@ class HandTracker:
             model_path: str, 
             num_hands: int = 1, 
             min_detection_confidence: float = 0.35, 
-            min_presence_confidence: float = 0.70,
-            min_tracking_confidence: float = 0.35,):
+            min_presence_confidence: float = 0.35,
+            min_tracking_confidence: float = 0.35):
         self.latest_result = None
 
         self.options = GestureRecognizerOptions(
@@ -30,6 +30,7 @@ class HandTracker:
         )
 
         self.recognizer = GestureRecognizer.create_from_options(self.options)
+        self.last_timestamp_ms = -1
 
     def _on_result(
         self,
@@ -44,8 +45,10 @@ class HandTracker:
         rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
 
-        timestamp_ms = int(time.time() * 1000)
-        self.recognizer.recognize_async(mp_image, timestamp_ms)
+        timestamp_ms = time.monotonic_ns() // 1_000_000
+        timestamp_ms = max(timestamp_ms, self.last_timestamp_ms + 1)
+        self.last_timestamp_ms = timestamp_ms
+        self.recognizer.recognize_async(mp_image, self.last_timestamp_ms)
         return frame
 
     def get_latest_result(self):

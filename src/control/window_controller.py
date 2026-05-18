@@ -1,4 +1,5 @@
 import subprocess
+import sys
 
 class WindowController:
     """
@@ -12,7 +13,7 @@ class WindowController:
 
     def close_app(self) -> None:
         #Press Esc to close the app. This is a bit of a hack, but it works for now.
-        self._run(["xdotool", "key", "Escape"])
+        sys.exit()
 
     def minimize_active_window(self) -> None:
         self._run(["xdotool", "getactivewindow", "windowminimize"])
@@ -20,14 +21,11 @@ class WindowController:
     def activate_window(self, window_id: str | int) -> None:
         self._run(["xdotool", "windowactivate", str(window_id)])
 
-    def get_active_window(self) -> str | None:
+    def get_active_window(self) -> int | None:
         try:
-            result = subprocess.check_output(
-                ["xdotool", "getactivewindow"],
-                text=True,
-            )
-            return result.strip()
-        except subprocess.CalledProcessError:
+            result = subprocess.check_output(["xdotool", "getactivewindow"], text=True)
+            return int(result.strip())
+        except (subprocess.CalledProcessError, ValueError):
             return None
         except FileNotFoundError:
             print("xdotool is not installed.")
@@ -74,12 +72,13 @@ class WindowController:
 
     def _run(self, command: list[str]) -> None:
         try:
-            subprocess.Popen(
+            subprocess.run(
                 command,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                check=True,
             )
+        except subprocess.CalledProcessError as e:
+            print(f"Window command failed with exit code {e.returncode}: {e.cmd}")
         except FileNotFoundError:
             print("xdotool is not installed.")
-        except Exception as e:
-            print(f"Window command failed: {e}")

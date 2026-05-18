@@ -1,17 +1,16 @@
 from app import App
+from config import AppConfig
+from ui import open_settings_window
 
 # To do:
 # - Better mouse movement smoothing
-# - Fix the drag mode (currently very buggy and unreliable)
-# - Fix dynamic gesture detection (currently too unreliable)
 
 def main():
-    app = App(
-        screen_width=1920,
-        screen_height=1080,
-        cursor_landmark_index=5,
-        model_path="models/gesture_recognizer.task",
-    )
+    config = open_settings_window(AppConfig())
+    if config is None:
+        return
+
+    app = App(config=config)
     app.run()
 
 

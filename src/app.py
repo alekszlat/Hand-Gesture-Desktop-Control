@@ -1,6 +1,7 @@
 import cv2 as cv
 
 from camera import CameraStream
+from config import AppConfig
 from tracking import HandTracker
 from debugging import FrameRenderer
 
@@ -8,7 +9,6 @@ from gestures import (
     CursorMapper,
     GestureInterpreter,
     GestureStateTracker,
-    DynamicGestureDetector,
     ModeManager,
 )
 
@@ -18,43 +18,42 @@ from control import (
     WindowController,
     ActionDispatcher,
 )
+from ui import StatusWidget
 
 
 class App:
-    def __init__(
-        self,
-        screen_width=1920,
-        screen_height=1080,
-        cursor_landmark_index=5,
-        model_path="models/gesture_recognizer.task",
-    ):
-        self.screen_width = screen_width
-        self.screen_height = screen_height
-        self.cursor_landmark_index = cursor_landmark_index
-        self.model_path = model_path
-
-        self.window_name = "Gesture Detect"
+    def __init__(self, config: AppConfig | None = None):
+        self.config = config or AppConfig()
+        self.window_name = self.config.window_name
         self.running = False
 
         # Core input/tracking
-        self.cam = CameraStream()
-        self.hand_tracker = HandTracker(model_path=self.model_path)
+        self.cam = CameraStream(camera_index=self.config.camera.camera_index)
+        self.hand_tracker = HandTracker(
+            model_path=self.config.tracking.model_path,
+            num_hands=self.config.tracking.num_hands,
+            min_detection_confidence=self.config.tracking.min_detection_confidence,
+            min_presence_confidence=self.config.tracking.min_presence_confidence,
+            min_tracking_confidence=self.config.tracking.min_tracking_confidence,
+        )
 
         # Gesture interpretation/state
-        self.gesture_interpreter = GestureInterpreter()
+        self.gesture_interpreter = GestureInterpreter(
+            min_confidence=self.config.gesture.min_confidence
+        )
         self.gesture_state_tracker = GestureStateTracker()
         self.mode_manager = ModeManager()
 
         # Cursor and dynamic gestures
         self.cursor_mapper = CursorMapper(
-            screen_width=self.screen_width,
-            screen_height=self.screen_height,
-            cursor_landmark_index=self.cursor_landmark_index,
-            mirror_x=False,
-        )
-
-        self.dynamic_gesture_detector = DynamicGestureDetector(
-            landmark_index=self.cursor_landmark_index,
+            screen_width=self.config.cursor.screen_width,
+            screen_height=self.config.cursor.screen_height,
+            cursor_landmark_index=self.config.cursor.cursor_landmark_index,
+            mouse_update_interval=self.config.cursor.mouse_update_interval,
+            mirror_x=self.config.cursor.mirror_x,
+            landmark_smoothing=self.config.cursor.landmark_smoothing,
+            deadzone_pixels=self.config.cursor.deadzone_pixels,
+            loss_hold_seconds=self.config.cursor.loss_hold_seconds,
         )
 
         # Controllers
@@ -67,12 +66,16 @@ class App:
             mouse_controller=self.mouse_controller,
             app_controller=self.app_controller,
             window_controller=self.window_controller,
+            click_cooldown=self.config.actions.click_cooldown,
+            launcher_action_cooldown=self.config.actions.launcher_action_cooldown,
+            window_action_cooldown=self.config.actions.window_action_cooldown,
         )
 
         # Debug renderer
         self.frame_renderer = FrameRenderer(
-            cursor_landmark_index=self.cursor_landmark_index
+            cursor_landmark_index=self.config.cursor.cursor_landmark_index
         )
+        self.status_widget = StatusWidget() if self.config.ui.show_status_widget else None
 
     def run(self):
         self.running = True
@@ -113,17 +116,19 @@ class App:
         # 5. Map hand landmark to cursor position
         mouse_pos = self.cursor_mapper.map_to_screen(latest_result)
 
-        # 6. Detect dynamic gestures such as swipes
-        dynamic_gesture = self.dynamic_gesture_detector.update(latest_result)
-
         # 7. Update current app mode
         current_mode = self.mode_manager.update(gesture_state)
+
+        if self.status_widget is not None:
+            self.status_widget.update(
+                mode=current_mode,
+                gesture_name=gesture_state.name,
+            )
 
         # 8. Dispatch actions
         self.action_dispatcher.dispatch(
             mode=current_mode,
             gesture_state=gesture_state,
-            dynamic_gesture=dynamic_gesture,
             cursor_pos=mouse_pos,
         )
 
@@ -133,7 +138,6 @@ class App:
             latest_result=latest_result,
             gesture_state=gesture_state,
             current_mode=current_mode,
-            dynamic_gesture=dynamic_gesture,
         )
 
         cv.imshow(self.window_name, output_frame)
@@ -144,7 +148,6 @@ class App:
         latest_result,
         gesture_state,
         current_mode,
-        dynamic_gesture,
     ):
         output_frame = frame.copy()
 
@@ -163,14 +166,12 @@ class App:
             current_mode.value,
         )
 
-        # output_frame = self.frame_renderer.draw_dynamic_gesture(
-        #     output_frame,
-        #     dynamic_gesture,
-        # )
-
         return output_frame
 
     def shutdown(self):
+        if self.status_widget is not None:
+            self.status_widget.destroy()
+
         self.cam.release()
         self.hand_tracker.close()
         cv.destroyAllWindows()

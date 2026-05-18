@@ -2,12 +2,13 @@ from enum import Enum
 
 from gestures.gesture_state import GestureState
 
+import numpy as np
+import sounddevice as sd
 
 class AppMode(Enum):
     BASE = "BASE"
     DRAG = "DRAG"
     LAUNCHER = "LAUNCHER"
-    COMMAND = "COMMAND"
     CONFIRM_CLOSE = "CONFIRM_CLOSE"
 
 
@@ -19,7 +20,6 @@ class ModeManager:
     - BASE
     - DRAG
     - LAUNCHER
-    - COMMAND
     - CONFIRM_CLOSE
     """
 
@@ -40,38 +40,32 @@ class ModeManager:
     def update(
         self,
         gesture_state: GestureState,
-        dynamic_gesture: str | None = None,
     ) -> AppMode:
         if gesture_state is None:
             return self.current_mode
 
         # BASE mode transitions
         if self.current_mode == AppMode.BASE:
-            self._update_from_base(gesture_state, dynamic_gesture)
+            self._update_from_base(gesture_state)
 
         # DRAG mode transitions
         elif self.current_mode == AppMode.DRAG:
-            self._update_from_drag(gesture_state, dynamic_gesture)
+            self._update_from_drag(gesture_state)
 
         # LAUNCHER mode transitions
         elif self.current_mode == AppMode.LAUNCHER:
-            self._update_from_launcher(gesture_state, dynamic_gesture)
-
-        # COMMAND mode transitions
-        elif self.current_mode == AppMode.COMMAND:
-            self._update_from_command(gesture_state, dynamic_gesture)
+            self._update_from_launcher(gesture_state)
 
         # CONFIRM_CLOSE mode transitions
         elif self.current_mode == AppMode.CONFIRM_CLOSE:
-            self._update_from_confirm_close(gesture_state, dynamic_gesture)
-
+            self._update_from_confirm_close(gesture_state)
         return self.current_mode
 
     def _update_from_base(
         self,
         gesture_state: GestureState,
-        dynamic_gesture: str | None,
     ) -> None:
+        
         # Closed fist starts drag mode
         if gesture_state.changed_to("Closed_Fist"):
             self.current_mode = AppMode.DRAG
@@ -81,80 +75,59 @@ class ModeManager:
         if gesture_state.is_gesture("Thumb_Up") and gesture_state.held_for(
             self.launcher_hold_seconds
         ):
+            self._play_mode_change_sound()
             self.current_mode = AppMode.LAUNCHER
-            return
-
-        # Optional: Victory held enters command mode
-        if gesture_state.is_gesture("Victory") and gesture_state.held_for(
-            self.command_hold_seconds
-        ):
-            self.current_mode = AppMode.COMMAND
             return
         
         if gesture_state.is_gesture("ILoveYou") and gesture_state.held_for(
             self.confirm_close_hold_seconds
         ):
+            self._play_mode_change_sound()
             self.current_mode = AppMode.CONFIRM_CLOSE
             return
 
     def _update_from_drag(
         self,
         gesture_state: GestureState,
-        dynamic_gesture: str | None,
     ) -> None:
+        
         # Open palm exits drag mode
-        if gesture_state.changed_to("Open_Palm"):
-            self.current_mode = AppMode.BASE
-            return
-
-        # If tracking is lost, exit drag mode for safety
-        if gesture_state.name is None:
+        if gesture_state.changed_to("Open_Palm") or gesture_state.changed_to("Unknown"):  # If tracking is lost, exit drag mode for safety
             self.current_mode = AppMode.BASE
             return
 
     def _update_from_launcher(
         self,
         gesture_state: GestureState,
-        dynamic_gesture: str | None,
     ) -> None:
         # Closed fist cancels launcher
         if gesture_state.changed_to("Closed_Fist"):
+            self._play_mode_change_sound()
             self.current_mode = AppMode.BASE
-            return
-
-
-    def _update_from_command(
-        self,
-        gesture_state: GestureState,
-        dynamic_gesture: str | None,
-    ) -> None:
-        # Open palm exits command mode
-        if gesture_state.changed_to("Open_Palm"):
-            self.current_mode = AppMode.BASE
-            return
-
-        # Thumb up held enters close confirmation
-        if gesture_state.is_gesture("Thumb_Up") and gesture_state.held_for(
-            self.close_hold_seconds
-        ):
-            self.current_mode = AppMode.CONFIRM_CLOSE
             return
 
     def _update_from_confirm_close(
         self,
         gesture_state: GestureState,
-        dynamic_gesture: str | None,
     ) -> None:
-        # Open palm cancels close confirmation
-        if gesture_state.changed_to("Open_Palm"):
+        # Thumb_Up cancels close confirmation
+        if gesture_state.changed_to("Thumb_Up"):
+            self._play_mode_change_sound()
             self.current_mode = AppMode.BASE
             return
-
-        # Closed fist confirms close.
-        #if gesture_state.changed_to("Closed_Fist"):
-        #    self.current_mode = AppMode.BASE
-        #    return
 
     def reset(self) -> AppMode:
         self.current_mode = AppMode.BASE
         return self.current_mode
+    
+    # For debugging purposes, sound an alert when you change modes
+    def _play_mode_change_sound(self):
+        # Generate a 440 Hz sine wave for 0.1 seconds
+        fs = 44100  # Sample rate
+        duration = 0.1  # Duration in seconds
+        frequency = 440  # Frequency in Hz (A4 note)
+        t = np.linspace(0, duration, int(fs * duration), endpoint=False)
+        audio_data = 0.5 * np.sin(2 * np.pi * frequency * t)
+
+        # Play the sound
+        sd.play(audio_data, fs)
